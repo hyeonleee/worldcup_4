@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="ko" class="">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>2026 월드컵 4강 전력 분석</title>
+    
+    <!-- 폰트: 가독성 높은 Pretendard 적용 -->
+    <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.8/dist/web/static/pretendard.css" />
+    
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        // Tailwind 다크모드 설정 활성화
+        tailwind.config = {
+            darkMode: 'class'
+        }
+    </script>
+    
+    <!-- 커스텀 스타일 -->
+    <style>
+        body {
+            font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;
+        }
+        
+        /* 가로 스크롤바 디자인 */
+        .custom-scrollbar::-webkit-scrollbar {
+            height: 8px;
+            width: 8px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #e2e8f0; 
+            border-radius: 4px;
+        }
+        .dark .custom-scrollbar::-webkit-scrollbar-track {
+            background: #334155;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #94a3b8; 
+            border-radius: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #64748b; 
+        }
+
+        /* 카드 호버 애니메이션 */
+        .team-card {
+            transition: all 0.2s ease-in-out;
+        }
+        .team-card:hover {
+            transform: scale(1.03);
+            box-shadow: 0 15px 30px -5px rgba(0, 0, 0, 0.1), 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            z-index: 30;
+        }
+
+        /* 모달 애니메이션 */
+        .modal-enter {
+            opacity: 0;
+            transform: scale(0.95) translateY(10px);
+        }
+        .modal-enter-active {
+            opacity: 1;
+            transform: scale(1) translateY(0);
+            transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1), transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* 트로피 광원 효과 */
+        .trophy-glow {
+            filter: drop-shadow(0 0 12px rgba(250, 204, 21, 0.6));
+        }
+
+        /* 인터랙티브 공인구 설정 */
+        #bgBall {
+            will-change: transform;
+            /* 배경과 자연스럽게 어우러지도록 그림자 부여 */
+            filter: drop-shadow(0 20px 30px rgba(0,0,0,0.15));
+            /* 타원형 찌그러짐을 고치기 위해 '추가'해야 할 속성 */
+            width: 25vw;   /* 화면 크기에 맞춰 적절히 조절 (예: 250px 등 가로세로 통일) */
+            height: 25vw;
+            aspect-ratio: 1 / 1;
+            object-fit: contain;
+        }
+    </style>
+</head>
+<body class="bg-slate-100 dark:bg-slate-900 text-slate-800 dark:text-slate-100 antialiased min-h-screen flex flex-col transition-colors duration-300 overflow-x-hidden">
+
+    <div class="fixed inset-0 pointer-events-none z-0 overflow-hidden">
+        <!-- 사용자가 업로드한 2026 공인구 이미지 적용 -->
+        <img id="bgBall" src="image_f06274.png" alt="2026 World Cup Ball" 
+             class="absolute top-0 left-0 w-[200px] h-[200px] md:w-[350px] md:h-[350px] opacity-70 dark:opacity-70 transition-opacity duration-300">
+    </div>
+
+    <!-- 스크롤 진행률 바 -->
+    <div id="scrollProgressBar" class="fixed top-0 left-0 h-1 bg-gradient-to-r from-blue-500 via-purple-500 to-red-500 z-50 w-0 transition-all duration-75"></div>
+
+    <!-- 다크모드 토글 버튼 -->
+    <div class="fixed top-4 right-4 z-40">
+        <button onclick="toggleDarkMode()" class="bg-white dark:bg-slate-800 p-3 rounded-full shadow-lg border border-slate-200 dark:border-slate-700 hover:scale-110 transition-transform">
+            <svg id="sunIcon" class="w-6 h-6 text-yellow-500 hidden" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="4.22" x2="19.78" y2="5.64"></line></svg>
+            <svg id="moonIcon" class="w-6 h-6 text-slate-700" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+        </button>
+    </div>
+
+    <!-- z-10을 주어 배경의 공보다 텍스트가 항상 위에 오도록 설정 -->
+    <div class="relative z-10 flex flex-col min-h-screen">
+        <header class="w-full bg-white/80 dark:bg-slate-800/80 backdrop-blur-md shadow-sm pt-14 pb-10 px-4 text-center transition-colors duration-300 border-b border-slate-200 dark:border-slate-700">
+            <div class="max-w-4xl mx-auto">
+                <h2 class="text-sm md:text-base font-bold text-slate-400 dark:text-slate-500 tracking-widest mb-3">2026 FIFA WORLD CUP SEMI-FINALS</h2>
+                <h1 class="text-3xl md:text-5xl font-extrabold text-slate-900 dark:text-white mb-5 leading-tight">
+                    메시·음바페·케인·야말<br class="hidden md:block"> 
+                    <span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 via-purple-600 to-red-600 dark:from-blue-400 dark:via-purple-400 dark:to-red-400">왕좌를 향한 마지막 여정</span>
+                </h1>
+                <p class="text-slate-500 dark:text-slate-400 text-base md:text-lg max-w-2xl mx-auto break-keep font-medium">
+                    세계 최강 4팀이 트로피를 향해 격돌합니다. 대진표의 국가 카드를 클릭하여 국가별 최종 26인 엔트리를 확인하세요. <br>
+                    <span class="text-xs text-blue-500 dark:text-blue-400 font-bold mt-2 inline-block">💡 Tip: 마우스 커서를 움직여 배경의 공인구를 굴려보세요!</span>
+                </p>
+                <div class="flex items-center justify-center gap-2 mt-4 text-xs font-bold text-blue-500 dark:text-blue-400 md:hidden animate-pulse">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M17 8l4 4m0 0l-4 4m4-4H3"></path></svg>
+                    좌우로 스크롤하여 대진표 전체를 확인하세요
+                </div>
+            </div>
+        </header>
+
+        <main class="flex-grow w-full max-w-7xl mx-auto px-4 py-8">
+            <div class="w-full overflow-x-auto custom-scrollbar pb-12 pt-4">
+                <div class="w-[1000px] h-[550px] relative mx-auto">
+                    
+                    <!-- ================= MATCH 1 (Left) ================= -->
+                    <div class="absolute z-20 flex items-center gap-2 bg-blue-50/90 dark:bg-blue-950/80 backdrop-blur-sm text-blue-700 dark:text-blue-400 text-sm font-extrabold px-5 py-2 rounded-full border border-blue-200 dark:border-blue-900 shadow-sm" style="left: 190px; top: 275px; transform: translate(-50%, -50%);">
+                        7.15 (수) 04:00 KST
+                    </div>
+
+                    <!-- 프랑스 (아르헨티나 자리로 이동, 좌측 정렬 레이아웃 적용) -->
+                    <div class="absolute w-[280px] h-[96px] bg-white/90 dark:bg-slate-800/90 backdrop-blur-md rounded-2xl shadow-md border border-slate-200 dark:border-slate-700 flex items-center p-4 cursor-pointer team-card z-20 hover:border-indigo-400 dark:hover:border-indigo-500" style="left: 190px; top: 125px; transform: translate(-50%, -50%);" onclick="openModal('france')">
+                        <div class="w-16 h-16 rounded-full overflow-hidden border-2 border-slate-100 dark:border-slate-700 shrink-0 bg-white">
+                            <img src="https://flagcdn.com/w320/fr.png" alt="프랑스" class="w-full h-full object-cover">
+                        </div>
+                        <div class="ml-4 flex-grow">
+                            <h3 class="text-xl font-extrabold text-slate-800 dark:text-white">프랑스</h3>
+                            <p class="text-xs text-slate-500 dark:text-slate-400 font-bold mt-1">우승 후보 0순위 · 레 블뢰</p>
+                        </div>
+                    </div>
+
+                    <!-- 스페인 (기존 유지) -->
+                    <div class="absolute w-[280px] h-[96px] bg-white/90 dark:bg-slate-800/90 backdrop-blur-md rounded-2xl shadow-md border border-slate-200 dark:border-slate-700 flex items-center p-4 cursor-pointer team-card z-20 hover:border-red-400 dark:hover:border-red-500" style="left: 190px; top: 425px; transform: translate(-50%, -50%);" onclick="openModal('spain')">
+                        <div class="w-16 h-16 rounded-full overflow-hidden border-2 border-slate-100 dark:border-slate-700 shrink-0 bg-white">
+                            <img src="https://flagcdn.com/w320/es.png" alt="스페인" class="w-full h-full object-cover">
+                        </div>
+                        <div class="ml-4 flex-grow">
+                            <h3 class="text-xl font-extrabold text-slate-800 dark:text-white">스페인</h3>
+                            <p class="text-xs text-slate-500 dark:text-slate-400 font-bold mt-1">유로 제패 · 무적함대</p>
+                        </div>
+                    </div>
+
+                    <!-- 좌측 선 -->
+                    <div class="absolute border-t-[3px] border-b-[3px] border-r-[3px] border-slate-300 dark:border-slate-600 rounded-r-2xl z-10" style="left: 370px; top: 275px; width: 80px; height: 300px; transform: translate(-50%, -50%);"></div>
+                    <div class="absolute bg-slate-300 dark:bg-slate-600 z-10" style="left: 430px; top: 275px; width: 40px; height: 3px; transform: translate(-50%, -50%);"></div>
+
+                    <!-- ================= CENTER ================= -->
+                    <div class="absolute flex flex-col items-center justify-center z-20" style="left: 500px; top: 275px; transform: translate(-50%, -50%); width: 140px;">
+                        <img src="trophy1.png" alt="결승전 트로피" class="w-32 h-32 object-contain trophy-glow mb-2">
+                        
+                        <div class="bg-slate-800 dark:bg-slate-700 text-white text-sm font-black px-4 py-1.5 rounded-lg shadow-lg tracking-widest">FINAL</div>
+                        <div class="text-xs font-bold text-slate-500 dark:text-slate-400 mt-2 text-center w-full">7.20 (월) 04:00</div>
+                    </div>
+
+                    <!-- ================= MATCH 2 (Right) ================= -->
+                    <div class="absolute z-20 flex items-center gap-2 bg-red-50/90 dark:bg-red-950/80 backdrop-blur-sm text-red-700 dark:text-red-400 text-sm font-extrabold px-5 py-2 rounded-full border border-red-200 dark:border-red-900 shadow-sm" style="left: 810px; top: 275px; transform: translate(-50%, -50%);">
+                        7.16 (목) 04:00 KST
+                    </div>
+
+                    <!-- 우측 선 -->
+                    <div class="absolute border-t-[3px] border-b-[3px] border-l-[3px] border-slate-300 dark:border-slate-600 rounded-l-2xl z-10" style="left: 630px; top: 275px; width: 80px; height: 300px; transform: translate(-50%, -50%);"></div>
+                    <div class="absolute bg-slate-300 dark:bg-slate-600 z-10" style="left: 570px; top: 275px; width: 40px; height: 3px; transform: translate(-50%, -50%);"></div>
+
+                    <!-- 아르헨티나 (프랑스 자리로 이동, 우측 정렬 레이아웃 적용) -->
+                    <div class="absolute w-[280px] h-[96px] bg-white/90 dark:bg-slate-800/90 backdrop-blur-md rounded-2xl shadow-md border border-slate-200 dark:border-slate-700 flex items-center p-4 cursor-pointer team-card z-20 hover:border-blue-400 dark:hover:border-blue-500" style="left: 810px; top: 125px; transform: translate(-50%, -50%);" onclick="openModal('argentina')">
+                        <div class="flex-grow text-right mr-4">
+                            <h3 class="text-xl font-extrabold text-slate-800 dark:text-white">아르헨티나</h3>
+                            <p class="text-xs text-slate-500 dark:text-slate-400 font-bold mt-1">남미의 자존심 · 디펜딩 챔피언</p>
+                        </div>
+                        <div class="w-16 h-16 rounded-full overflow-hidden border-2 border-slate-100 dark:border-slate-700 shrink-0 bg-white">
+                            <img src="https://flagcdn.com/w320/ar.png" alt="아르헨티나" class="w-full h-full object-cover">
+                        </div>
+                    </div>
+
+                    <!-- 잉글랜드 (이전 단계에서 수정한 우측 정렬 유지) -->
+                    <div class="absolute w-[280px] h-[96px] bg-white/90 dark:bg-slate-800/90 backdrop-blur-md rounded-2xl shadow-md border border-slate-200 dark:border-slate-700 flex items-center p-4 cursor-pointer team-card z-20 hover:border-rose-400 dark:hover:border-rose-500" style="left: 810px; top: 425px; transform: translate(-50%, -50%);" onclick="openModal('england')">
+                        <div class="flex-grow text-right mr-4">
+                            <h3 class="text-xl font-extrabold text-slate-800 dark:text-white">잉글랜드</h3>
+                            <p class="text-xs text-slate-500 dark:text-slate-400 font-bold mt-1">축구 종가 · 무관 탈출 도전</p>
+                        </div>
+                        <div class="w-16 h-16 rounded-full overflow-hidden border-2 border-slate-100 dark:border-slate-700 shrink-0 bg-white">
+                            <img src="https://flagcdn.com/w320/gb-eng.png" alt="잉글랜드" class="w-full h-full object-cover">
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <div id="infoModal" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 sm:p-6 overflow-y-auto">
+        <div id="modalContent" class="bg-white dark:bg-slate-900 rounded-3xl w-full max-w-2xl shadow-2xl overflow-hidden modal-enter relative my-auto max-h-[90vh] flex flex-col border dark:border-slate-700">
+            
+            <button onclick="closeModal()" class="absolute top-4 right-4 bg-black/20 hover:bg-black/40 text-white rounded-full p-2 transition-colors z-20">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+            </button>
+
+            <div id="modalHeader" class="pt-10 pb-8 px-8 text-center relative shrink-0">
+                <div class="w-24 h-24 mx-auto rounded-full overflow-hidden border-4 border-white dark:border-slate-800 shadow-lg mb-4 bg-white relative z-10">
+                    <img id="modalFlag" src="" alt="국기" class="w-full h-full object-cover">
+                </div>
+                <h3 id="modalTeamName" class="text-4xl font-black text-white relative z-10 tracking-tight">팀명</h3>
+            </div>
+
+            <div class="p-6 md:p-8 overflow-y-auto bg-slate-50 dark:bg-slate-950 flex-grow custom-scrollbar">
+                
+                <div class="bg-white dark:bg-slate-800 rounded-2xl p-5 shadow-sm border border-slate-100 dark:border-slate-800 mb-6">
+                    <h4 class="text-xs font-black text-slate-400 tracking-widest mb-1 uppercase flex items-center gap-2">사령탑</h4>
+                    <p id="modalCoach" class="text-lg font-bold text-slate-800 dark:text-slate-100">감독 이름</p>
+                </div>
+                
+                <div class="mb-6">
+                    <h4 class="text-sm font-black text-slate-800 dark:text-white mb-4 pl-1 border-l-4 border-slate-400">월드컵 최종 엔트리</h4>
+                    <div class="grid grid-cols-1 gap-4">
+                        <div class="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-100 dark:border-slate-800 shadow-sm">
+                            <span class="inline-block bg-red-100 dark:bg-red-950/50 text-red-700 dark:text-red-400 text-xs font-black px-2 py-1 rounded mb-2">FW (공격수)</span>
+                            <p id="modalFW" class="text-sm text-slate-600 dark:text-slate-300 font-medium leading-relaxed break-keep"></p>
+                        </div>
+                        <div class="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-100 dark:border-slate-800 shadow-sm">
+                            <span class="inline-block bg-green-100 dark:bg-green-950/50 text-green-700 dark:text-green-400 text-xs font-black px-2 py-1 rounded mb-2">MF (미드필더)</span>
+                            <p id="modalMF" class="text-sm text-slate-600 dark:text-slate-300 font-medium leading-relaxed break-keep"></p>
+                        </div>
+                        <div class="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-100 dark:border-slate-800 shadow-sm">
+                            <span class="inline-block bg-blue-100 dark:bg-blue-950/50 text-blue-700 dark:text-blue-400 text-xs font-black px-2 py-1 rounded mb-2">DF (수비수)</span>
+                            <p id="modalDF" class="text-sm text-slate-600 dark:text-slate-300 font-medium leading-relaxed break-keep"></p>
+                        </div>
+                        <div class="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-100 dark:border-slate-800 shadow-sm">
+                            <span class="inline-block bg-yellow-100 dark:bg-yellow-950/50 text-yellow-700 dark:text-yellow-400 text-xs font-black px-2 py-1 rounded mb-2">GK (골키퍼)</span>
+                            <p id="modalGK" class="text-sm text-slate-600 dark:text-slate-300 font-medium leading-relaxed break-keep"></p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-slate-800 dark:bg-slate-800 rounded-2xl p-6 text-white shadow-md border dark:border-slate-700">
+                    <h4 class="text-xs font-black text-yellow-400 tracking-wider mb-3 uppercase">TACTICAL POINT</h4>
+                    <p id="modalPoint" class="text-sm leading-relaxed font-medium break-keep opacity-90"></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- 1. 인터랙티브 공인구 배경 애니메이션 로직 ---
+        const ball = document.getElementById('bgBall');
+        
+        // 브라우저 너비에 맞춰 공 크기 동적 할당
+        let ballSize = window.innerWidth >= 768 ? 350 : 200; 
+        let ballRadius = ballSize / 2;
+        
+        // 공의 초기 위치 (화면 중앙) 및 물리 변수
+        let ballX = window.innerWidth / 2;
+        let ballY = window.innerHeight / 2;
+        let vx = 0; // x축 속도
+        let vy = 0; // y축 속도
+        let rotation = 0; // 회전 각도
+        
+        // 마우스 위치 추적용
+        let mouseX = -1000;
+        let mouseY = -1000;
+
+        // 창 크기 변경 시 공 크기 및 반지름 재계산
+        window.addEventListener('resize', () => {
+            ballSize = window.innerWidth >= 768 ? 350 : 200;
+            ballRadius = ballSize / 2;
+        });
+
+        // 마우스 이동 시 좌표 기록
+        window.addEventListener('mousemove', (e) => {
+            mouseX = e.clientX;
+            mouseY = e.clientY;
+        });
+
+        // 스크롤 시 공에 상하 힘(반작용) 가하기
+        let lastScrollY = window.scrollY;
+        window.addEventListener('scroll', () => {
+            let currentScrollY = window.scrollY;
+            let scrollDelta = currentScrollY - lastScrollY;
+            vy -= scrollDelta * 0.15; // 스크롤 방향의 반대로 살짝 밀어냄
+            lastScrollY = currentScrollY;
+
+            // 추가 기능: 상단 스크롤 진행 바
+            const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+            const scrolled = (currentScrollY / height) * 100;
+            document.getElementById('scrollProgressBar').style.width = scrolled + '%';
+        });
+
+        // 애니메이션 루프 (초당 60프레임 물리 엔진 구동)
+        function animateBall() {
+            // 마우스와 공 중심 사이의 거리 계산
+            let dx = ballX - mouseX;
+            let dy = ballY - mouseY;
+            let dist = Math.sqrt(dx * dx + dy * dy);
+
+            // 마우스가 가까이 오면 척력(밀어내는 힘) 발생
+            const repulsionRadius = 350; // 마우스에 반응하는 반경 거리
+            if (dist < repulsionRadius) {
+                let force = (repulsionRadius - dist) / repulsionRadius;
+                vx += (dx / dist) * force * 1.5;
+                vy += (dy / dist) * force * 1.5;
+            }
+
+            // 마찰력 적용 (서서히 멈춤)
+            vx *= 0.95;
+            vy *= 0.95;
+
+            // 속도를 위치에 더함
+            ballX += vx;
+            ballY += vy;
+
+            // 벽 튕기기 (바운드 처리)
+            if (ballX < ballRadius) { 
+                ballX = ballRadius; 
+                vx *= -0.8; // 튕겨나올 때 속도 감소 
+            }
+            if (ballX > window.innerWidth - ballRadius) { 
+                ballX = window.innerWidth - ballRadius; 
+                vx *= -0.8; 
+            }
+            if (ballY < ballRadius) { 
+                ballY = ballRadius; 
+                vy *= -0.8; 
+            }
+            if (ballY > window.innerHeight - ballRadius) { 
+                ballY = window.innerHeight - ballRadius; 
+                vy *= -0.8; 
+            }
+
+            // 구르는 효과: 이동 속도에 비례하여 회전 각도 증가
+            rotation += (vx + vy) * 0.6;
+
+            // 최종 렌더링 (translate의 X, Y는 공의 좌상단 기준이므로 중심점을 맞추기 위해 반경만큼 빼줌)
+            ball.style.transform = `translate(${ballX - ballRadius}px, ${ballY - ballRadius}px) rotate(${rotation}deg)`;
+
+            // 다음 프레임 요청
+            requestAnimationFrame(animateBall);
+        }
+        
+        // 애니메이션 시작 (처음에 살짝 움직이는 모션 부여)
+        vx = (Math.random() - 0.5) * 20;
+        vy = (Math.random() - 0.5) * 20;
+        animateBall();
+
+
+        // --- 2. 다크모드 제어 ---
+        function toggleDarkMode() {
+            const isDark = document.documentElement.classList.toggle('dark');
+            localStorage.setItem('theme', isDark ? 'dark' : 'light');
+            updateThemeIcons(isDark);
+        }
+
+        function updateThemeIcons(isDark) {
+            document.getElementById('sunIcon').classList.toggle('hidden', !isDark);
+            document.getElementById('moonIcon').classList.toggle('hidden', isDark);
+        }
+
+        if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+            updateThemeIcons(true);
+        } else {
+            document.documentElement.classList.remove('dark');
+            updateThemeIcons(false);
+        }
+
+        // --- 3. 모달 및 데이터 로직 ---
+        const teamData = {
+            argentina: {
+                name: '아르헨티나', flag: 'https://flagcdn.com/w320/ar.png', color: 'bg-gradient-to-br from-blue-400 to-cyan-500',
+                coach: '리오넬 스칼로니 (2022 월드컵 & 2024 코파 우승 명장)',
+                squad: {
+                    fw: '리오넬 메시, 니콜라스 파스, 티아고 알마다, 니콜라스 곤살레스, 줄리아노 시메오네, 라우타로 마르티네스, 호세 마누엘 로페스, 훌리안 알바레스',
+                    mf: '레안드로 파레데스, 로드리고 데 파울, 에세키엘 팔라시오스, 엔조 페르난데스, 알렉시스 맥 알리스터, 지오바니 로 셀소, 발렌틴 바르코',
+                    df: '곤살로 몬티엘, 나우엘 몰리나, 리산드로 마르티네스, 니콜라스 오타멘디, 레오나르도 발레르디, 크리스티안 로메로, 파쿤도 메디나, 니콜라스 탈리아피코',
+                    gk: '에밀리아노 마르티네스, 헤로니모 룰리, 후안 무소'
+                },
+                point: '축구 황제 리오넬 메시의 진짜 마지막 라스트 댄스. 4-3-3과 4-4-2를 유연하게 오가는 스칼로니 감독 특유의 실리적이면서도 끈적한 중원 장악력이 돋보입니다.'
+            },
+            spain: {
+                name: '스페인', flag: 'https://flagcdn.com/w320/es.png', color: 'bg-gradient-to-br from-red-600 to-orange-500',
+                coach: '루이스 데 라 푸엔테 (유로 2024 전승 우승의 주역)',
+                squad: {
+                    fw: '라민 야말, 니코 윌리엄스, 다니 올모, 미켈 오야르사발, 알바로 모라타, 사무 오모로디온, 페란 토레스, 페르민 로페스',
+                    mf: '로드리, 마르틴 수비멘디, 페드리, 파비안 루이스, 미켈 메리노, 가비, 알렉스 바에나',
+                    df: '페드로 포로, 마르코스 요렌테, 아이메릭 라포르트, 파우 쿠바르시, 마르크 푸빌, 에릭 가르시아, 마르크 쿠쿠렐라, 알레한드로 그리말도',
+                    gk: '우나이 시몬, 다비드 라야, 호안 가르시아'
+                },
+                point: '전통적인 티키타카 점유율 축구에 양 측면(야말, 니코)의 파괴적인 속도전을 결합하여 완벽한 밸런스를 찾은 무적함대. 18세 천재 라민 야말이 만들어내는 변수가 키포인트입니다.'
+            },
+            france: {
+                name: '프랑스', flag: 'https://flagcdn.com/w320/fr.png', color: 'bg-gradient-to-br from-blue-800 to-indigo-900',
+                coach: '디디에 데샹 (철의 장막을 세우는 실리 축구의 대가)',
+                squad: {
+                    fw: '마그네스 아클리우슈, 킬리안 음바페, 우스만 뎀벨레, 마이클 올리스, 데지레 두에, 브래들리 바르콜라, 라얀 셰르키, 마르쿠스 튀람, 장필리프 마테타',
+                    mf: '은골로 캉테, 아드리앙 라비오, 마누 코네, 오렐리앙 추아메니, 워렌 자이르에머리',
+                    df: '다요 우파메카노, 윌리엄 살리바, 루카스 디뉴, 테오 에르난데스, 루카스 에르난데스, 이브라히마 코나테, 쥘 쿤데, 말로 구스토, 막상스 라크루아',
+                    gk: '마이크 메냥, 브리스 삼바, 로빈 리세르'
+                },
+                point: '살리바-우파메카노로 이어지는 압도적인 수비 라인을 바탕으로 상대를 끌어들인 뒤, 전성기 나이에 도달한 음바페의 파괴적인 스피드를 활용하는 역습 전술이 돋보입니다.'
+            },
+            england: {
+                name: '잉글랜드', flag: 'https://flagcdn.com/w320/gb-eng.png', color: 'bg-gradient-to-br from-red-500 to-rose-600',
+                coach: '토마스 투헬 (전술적 유연성과 토너먼트 승부사 기질을 갖춘 명장)',
+                squad: {
+                    fw: '앤서니 고든, 해리 케인, 노니 마두에케, 마커스 래시포드, 부카요 사카, 아이반 토니, 올리 왓킨스',
+                    mf: '엘리엇 앤더슨, 주드 벨링엄, 에베레치 에제, 조던 헨더슨, 코비 마이누, 데클란 라이스, 모건 로저스',
+                    df: '댄 번, 트레보 찰로바, 마크 게히, 리스 제임스, 에즈리 콘사, 티노 리브라멘토, 니코 오라일리, 자렐 콴사, 제드 스펜스, 존 스톤스',
+                    gk: '딘 헨더슨, 조던 픽포드, 제임스 트래포드'
+                },
+                point: '무관 징크스를 깨려는 주장 해리 케인의 절실함과 함께, 투헬 감독 특유의 입체적인 전술과 강도 높은 전방 압박이 어떻게 시너지를 낼지가 4강전의 핵심 관건입니다.'
+            }
+        };
+
+        const modal = document.getElementById('infoModal');
+        const modalContent = document.getElementById('modalContent');
+        const modalHeader = document.getElementById('modalHeader');
+        
+        function openModal(teamKey) {
+            const data = teamData[teamKey];
+            if (!data) return;
+
+            document.getElementById('modalTeamName').innerText = data.name;
+            document.getElementById('modalFlag').src = data.flag;
+            document.getElementById('modalCoach').innerText = data.coach;
+            document.getElementById('modalPoint').innerText = data.point;
+            
+            document.getElementById('modalFW').innerText = data.squad.fw;
+            document.getElementById('modalMF').innerText = data.squad.mf;
+            document.getElementById('modalDF').innerText = data.squad.df;
+            document.getElementById('modalGK').innerText = data.squad.gk;
+
+            modalHeader.className = `pt-10 pb-8 px-8 text-center relative shrink-0 ${data.color}`;
+
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            
+            setTimeout(() => { modalContent.classList.add('modal-enter-active'); }, 10);
+        }
+
+        function closeModal() {
+            modalContent.classList.remove('modal-enter-active');
+            setTimeout(() => {
+                modal.classList.remove('flex');
+                modal.classList.add('hidden');
+            }, 300);
+        }
+
+        modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
+        document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !modal.classList.contains('hidden')) closeModal(); });
+    </script>
+</body>
+</html>
